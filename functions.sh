@@ -3,11 +3,11 @@ log() {
   echo -e "\e[90m[$(date +"%Y-%m-%d %H:%M:%S")]\e[39m $@"
 }
 
-warn() {
-  log "\e[33mWARN:\e[39m $@"
-}
 info() {
   log "\e[32mINFO:\e[39m $@"
+}
+warn() {
+  log "\e[33mWARN:\e[39m $@"
 }
 debug() {
   log "\e[34mDEBUG:\e[39m $@"
@@ -63,25 +63,38 @@ getFilePermissions() {
   ls -ld $1 | awk '{k=0;for(i=0;i<=8;i++)k+=((substr($1,i+2,1)~/[rwx]/)*2^(8-i));if(k)printf("%0o ",k);print $1}' | cut -c -3
 }
 
+# Retourne le nom de fichier si celui ci existe dans le fichier de journalisation
 getJournalFileName() {
+  # Récupère la variable passé en argument
   file=$1
+  # Cherche dans le fichier de journalisation les entrées où le nom de fichier est exactement le même que celui passé en argument
   cat $journalPath | awk '{print $7}' | grep -Fx "$file"
 }
 
-# Retourne à quelle ligne du journal le fichier se situe
+# Retourne à quelle ligne du fichier de journalisation le fichier se situe
 getJournalFileLineLocation() {
+  # Récupère la variable passé en argument
   file=$1
+  # Cherche dans le fichier de journalisation les entrées où le nom de fichier est exactement le même que celui passé en argument, avec sa ligne
   cat $journalPath | awk '{print $7}' | grep -Fnx "$file" | cut -d : -f 1
 }
 
 getJournalFileMetadatas() {
+  # Récupère la variable passé en argument
   file=$1
+  # 
   line=$(getJournalFileLineLocation $file)
   cat $journalPath | awk '{print $1,$3,$4,$5,$6}' | sed -n "${line}p"
 }
 
-# $1 source
-# $2 dest
+# Récupère les métadonnées utiles d'un dossier (droits, proprio, groupe)
+getFolderMetadatas() {
+  folder=$1
+  ls -ld $folder | awk '{print ($1,$3,$4)}'
+}
+
+# $1 source -> FolderA
+# $2 dest -> FolderB
 checkAndCopy() {
   if [[ -f $1 ]]; then
     cp -p $1 $2
@@ -112,17 +125,3 @@ checkAndCopy() {
     fi
   fi
 }
-
-# Path functions
-# Removes ./
-popCurrentDir() {
-  folder=$1
-  echo $folder | sed 's/^\.\///'
-}
-
-# Récupère les métadonnées utiles d'un dossier (droits, proprio, groupe)
-getFolderMetadatas() {
-  folder=$1
-  ls -ld $folder | awk '{print ($1,$3,$4)}'
-}
-

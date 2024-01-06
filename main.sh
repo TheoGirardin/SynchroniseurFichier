@@ -36,32 +36,25 @@ if [[ ! -f $journalPath ]]; then
   exit 0
 fi
 
-# TODO : A supprimer ???? Non utilisé, sert à sortir uniquement le nom de fichier des logs 
-listJournal() {
-  cat $journalPath | awk '{print $7}'
-}
-
+# Début de la fonction principale de ce script
 sync() {
   # Lancement d'une boucle for avec l'intégralité des dossiers et fichiers du folderA
   for file in $(listFolder $folderA); do
-	# Récupération des métadatas de chaque fichiers ou dossiers
-    metadataA=$(ls $folderA/$file)
-    # Regarde si le fichier existe dans le folderB
+
+    # Regarde si le fichier de la boucle dans folderA existe dans le folderB
     if [[ -e $folderB/$file ]]; then
 
-      # Si c'est un fichier dans le folderA et que c'est un dossier dans le folderB
+      # Si c'est un fichier dans le folderA et que c'est un dossier dans le folderB, alors on demande si il souhaite continuer
       if [[ -f $folderA/$file && -d $folderB/$file ]]; then
         warn "Conflit ! $folderA/$file est un fichier et $folderB/$file est un dossier"
         wantToContinue
-
-      # Si c'est un dossier dans le folderA et que c'est un fichier dans le folderB
+      # Si c'est un dossier dans le folderA et que c'est un fichier dans le folderB, alors on demande si il souhaite continuer
       elif [[ -d $folderA/$file && -f $folderB/$file ]]; then
         warn "Conflit ! $folderA/$file est un dossier et $folderB/$file est un fichier"
         wantToContinue
 
-      # Sinon, dans le cas où les deux sont fichiers ou dossiers, récupère le fichier dans le journal
+      # Sinon, dans le cas où les deux sont fichiers ou dossiers, vérifie si ce fichier a déjà été enregistré dans le fichier de journalisation
       elif [[ $(getJournalFileName ${file}) ]]; then
-        journalDate=$(getJournalFileMetadatas ${file})
 
         if [[ $(getFileMetadatas $folderA/$file) != $(getFileMetadatas $folderB/$file) ]]; then
 
@@ -69,7 +62,9 @@ sync() {
           # Si c'est un fichier: comparer la date et les permission + proprio + groupe pour vérifier si un conflit existe
           # Si c'est un dossier: comprare juste les permission + proprio + groupe
 
-          # Si c'est un fichier
+          # Récupère les metadatas sur l'élément de la boucle dans le fichier de journalisation
+          journalDate=$(getJournalFileMetadatas ${file})
+          # Si l'élément de la boucle est un fichier, alors 
           if [[ -f $folderA/$file && $journalDate != $(getFileMetadatas $folderA/$file) && $journalDate != $(getFileMetadatas $folderB/$file) ]]; then
             while [[ $REPLY != 1 || $REPLY != 2 ]] ; do
               warn "Conflit sur le fichier $file !"
@@ -90,7 +85,7 @@ sync() {
               fi
             done
 
-          # Si c'est un dossier, compare le seulement les droits, le proprio et le groupe
+          # Si l'élément de la boucle est un dossier, compare le seulement les droits, le proprio et le groupe
           elif [[ -d $folderA/$file && $journalDate != $(getFolderMetadatas $folderA/$file) && $journalDate != $(getFolderMetadatas $folderB/$file) ]]; then
 
             while [[ $REPLY != 1 || $REPLY != 2 ]] ; do
@@ -118,17 +113,16 @@ sync() {
           fi
         fi
 
-	  # Dans le cas où les deux sont fichiers ou dossiers, mais 
+	  # Dans le cas où les deux sont fichiers ou dossiers, mais que l'élément de la boucle n'existe pas dans le fichier de journalisation 
       else
         error "Le fichier journal est incomplet ou incorrect. Veuillez le supprimer"
         exit 1
       fi
 
-	# Si le fichier de la boucle n'existe pas dans le folderB
+	  # Si le fichier de la boucle n'existe pas dans le folderB
     else
-      # TODO Lacho : ca veut dire quoi ? grep -Fx checks all the line and ignore special character which can be in the ${file}
-	  # Regarde si ce fichier exite dans le journal d'évenement
-	  # TODO: comprendre ici, pourquoi supprimer si il existe dans le journal ??
+	    # Regarde si ce fichier exite dans le journal d'évenement
+	    # TODO: comprendre ici, pourquoi supprimer si il existe dans le journal ??
       if [[ $(getJournalFileName ${file}) ]]; then
         # Le fichier existe dans le journal
         rm -r $folderA/$file
