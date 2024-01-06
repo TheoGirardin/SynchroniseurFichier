@@ -1,4 +1,4 @@
-# Liste des différentes alertes sous forme formatté pouvant être utilisé pour prévenir l'utilisateur pendant l'éxecution du code
+# Liste des différentes alertes sous forme formattée pouvant être utilisée pour prévenir l'utilisateur pendant l'exécution du code
 log() {
   echo -e "\e[90m[$(date +"%Y-%m-%d %H:%M:%S")]\e[39m $@"
 }
@@ -17,7 +17,7 @@ error() {
   exit 1
 }
 
-# Question posé en cas d'erreur dans la boucle
+# Question posée en cas d'erreur dans la boucle
 wantToContinue() {
   while [[ $REPLY != 1 || $REPLY != 2 ]] ; do
     echo "Souhaitez-vous continuer la synchronisation malgré cette erreur?"
@@ -39,7 +39,7 @@ listFolder() {
   find $folderName | cut -d / -f 2- | sed '1d'
 }
 
-# Liste les éléments du dossier passé en argument en récupérant des détails sur chacun, formatte les noms et supprime le dossier racine de cette liste
+# Liste les éléments du dossier passé en argument en récupérant des détails sur chacun, formate les noms et supprime le dossier racine de cette liste
 listFolderExplicit() {
   folderName=$1
   find $folderName -exec ls -ld --time-style='+%Y-%m-%d-%H-%M-%S' {} + | sed '1d' | sed "s/$folderName\///"
@@ -71,7 +71,7 @@ getJournalFileMetadatas() {
   cat $journalPath | awk '{print $1,$3,$4,$5,$6}' | sed -n "${line}p"
 }
 
-# Récupère les permissions, le propriètaire et le groupe d'un dossier
+# Récupère les permissions, le propriétaire et le groupe d'un dossier
 getFolderMetadatas() {
   folderName=$1
   ls -ld $folderName | awk '{print ($1,$3,$4)}'
@@ -84,7 +84,7 @@ getFilePermissions() {
   ls -ld $fileName | awk '{k=0;for(i=0;i<=8;i++)k+=((substr($1,i+2,1)~/[rwx]/)*2^(8-i));if(k)printf("%0o ",k);print $1}' | cut -c -3
 }
 
-# Récupère le propriètaire et le groupe d'un fichier et remplace l'espace par deux points (root:root)
+# Récupère le propriétaire et le groupe d'un fichier et remplace l'espace par deux points (root:root)
 getFileOwner() {
   fileName=$1
   ls -ld $fileName | awk '{print $3,$4}' | sed 's/\ /\:/'
@@ -102,7 +102,7 @@ checkAndCopy() {
 
   # Si l'élément passé en argument n'est pas un fichier
   else
-    # Verifie si le propriétaire ou le groupe a changé
+    # Vérifie si le propriétaire ou le groupe a changé
     if [[ $(getFileOwner $source) != $(getFileOwner $destination) ]]; then
 
       # Vérification si l'utilisateur du script est root, car seul le root peut lancer chown
@@ -117,12 +117,12 @@ checkAndCopy() {
       fi
     fi
 
-    # Vérifie si les permissions de source sont les mêmes que celles de destination en comparant leurs permissions octal
+    # Vérifie si les permissions de la source sont les mêmes que celles de la destination en comparant leurs permissions octales
     if [[ $(getFilePermissions $source) != $(getFilePermissions $destination) ]]; then
       # TODO : trop bizzare ca 
       # chmod $(getFilePermissions $source) $destination 2> /dev/null ||
 
-      # Si non, essaye de donner les permissions de la source à la destination grâce aux permissions en octal
+      # Si non, essaie de donner les permissions de la source à la destination grâce aux permissions en octal
       if [[ $(chmod $(getFilePermissions $source) $destination) ]]; then
         log "Changement de droits [$source] pour $destination"
       else

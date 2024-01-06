@@ -1,5 +1,5 @@
 #!/bin/bash -e
-# -e afin de stopper l'éxecution du script en cas de problème
+# -e afin de stopper l'exécution du script en cas de problème
 
 # Initie les fonctions stockées dans le fichier functions.sh afin de les utiliser ici
 source ./functions.sh
@@ -18,18 +18,18 @@ else
 	exit 1
 fi
 
-# Création de la variable vers le fichier de journalisation 
+# Création de la variable vers le fichier de journalisation
 journalPath="./journal.txt"
 
-# Supprime les ./ au variable afin de normalisé leur écriture pour leur traitement dans le script
+# Supprime les './' des variables afin de normaliser leur écriture pour leur traitement dans le script
 folderA=$(echo $folderA | sed 's/^\.\///')
 folderB=$(echo $folderB | sed 's/^\.\///')
 
-# Vérifie si les dossiers existent bien sous leur forme normalisé
+# Vérifie si les dossiers existent bien sous leur forme normalisée
 [[ -d $folderA ]] || error "Le dossier A n'existe pas"
 [[ -d $folderB ]] || error "Le dossier B n'existe pas"
 
-# Si le journal n'existe pas, il le créait en supprimant tous les fichier de B et synchronisant A vers B
+# S'il le journal n'existe pas, il est créé en supprimant tous les fichiers de B et en synchronisant A vers B
 if [[ ! -f $journalPath ]]; then
   rm -rf $folderB
   cp -pr $folderA $folderB
@@ -44,14 +44,14 @@ sync() {
   # Lancement d'une boucle for avec l'intégralité des dossiers et fichiers du folderA
   for file in $(listFolder $folderA); do
 
-    # Regarde si l'élément de la boucle dans folderA existe dans le folderB
+    # Regarde si l'élément de la boucle dans folderA existe dans folderB
     if [[ -e $folderB/$file ]]; then
 
-      # Si c'est un fichier dans le folderA et que c'est un dossier dans le folderB, alors on demande si il souhaite continuer
+      # Si c'est un fichier dans folderA et que c'est un dossier dans folderB, alors on demande s'il souhaite continuer
       if [[ -f $folderA/$file && -d $folderB/$file ]]; then
         warn "Conflit ! $folderA/$file est un fichier et $folderB/$file est un dossier"
         wantToContinue
-      # Si c'est un dossier dans le folderA et que c'est un fichier dans le folderB, alors on demande si il souhaite continuer
+      # Si c'est un dossier dans folderA et que c'est un fichier dans folderB, alors on demande s'il souhaite continuer
       elif [[ -d $folderA/$file && -f $folderB/$file ]]; then
         warn "Conflit ! $folderA/$file est un dossier et $folderB/$file est un fichier"
         wantToContinue
@@ -59,7 +59,7 @@ sync() {
       # Sinon, dans le cas où les deux sont fichiers ou dossiers, vérifie si ce fichier a déjà été enregistré dans le fichier de journalisation
       elif [[ $(getJournalFileName ${file}) ]]; then
 
-        # Vérifie si les métadatas des deux éléments sont différents, sinon passe au prochain élément de la boucle
+        # Vérifie si les métadonnées des deux éléments sont différentes, sinon passe au prochain élément de la boucle
         if [[ $(getFileMetadatas $folderA/$file) != $(getFileMetadatas $folderB/$file) ]]; then
           # Supprime la variable de réponse dans la boucle 
           unset REPLY
@@ -115,7 +115,7 @@ sync() {
               fi
             done
 
-          # Si les métadonnées de l'élément sont différent de ceux enregistrée dans la journalisation pour seulement l'un des deux, alors
+          # Si les métadonnées de l'élément sont différentes de celles enregistrées dans la journalisation pour seulement l'un des deux, alors
           else
             # Si il y a eu une modification du folderA uniquement, alors A est copié vers B 
             if [[ $journalMetadas !=  $(getFileMetadatas $folderA/$file) ]]; then
@@ -133,7 +133,7 @@ sync() {
         exit 1
       fi
 
-	  # Si l'élément de la boucle n'existe pas dans le folderB
+	  # Si l'élément de la boucle n'existe pas dans folderB
     else
 	    # Regarde si ce fichier exite dans le journal d'évenement
 	    # TODO: comprendre ici, pourquoi supprimer si il existe dans le journal ??
@@ -151,11 +151,11 @@ sync() {
     fi
   done
 
-  # Fin d'execution de ce fichier ou dossier de la boucle, donc ajout de l'évenement dans le journal
+  # Fin d'exécution de ce fichier ou dossier de la boucle, donc ajout de l'événement dans le journal
   listFolderExplicit $folderA > $journalPath
 }
 
-# Lance la fontion de synchronisation de A vers B, puis de B vers A 
+# Lance la fonction de synchronisation de A vers B, puis de B vers A
 # Par extension de if [[ ! -f $journalPath ]], uniquement si le fichier de journalisation existe
 sync $folderA $folderB
 sync $folderB $folderA
