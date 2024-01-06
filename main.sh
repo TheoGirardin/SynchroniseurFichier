@@ -1,4 +1,7 @@
 #!/bin/bash -e
+# -e afin de stopper l'éxecution du script en cas de problème
+
+# Initie les fonctions stockées dans le fichier functions.sh afin de les utiliser ici
 source ./functions.sh
 
 # Vérification de la bonne entrée des arguments par l'utilisateur
@@ -18,11 +21,11 @@ fi
 # Création de la variable vers le fichier de journalisation 
 journalPath="./journal.txt"
 
-# Supprime les ./ si il existe afin de normaliser leur écriture en cas de besoin
+# Supprime les ./ au variable afin de normalisé leur écriture pour leur traitement dans le script
 folderA=$(echo $folderA | sed 's/^\.\///')
 folderB=$(echo $folderB | sed 's/^\.\///')
 
-# Vérifie si les dossiers existent bien, même sous leur forme normaliser
+# Vérifie si les dossiers existent bien sous leur forme normalisé
 [[ -d $folderA ]] || error "Le dossier A n'existe pas"
 [[ -d $folderB ]] || error "Le dossier B n'existe pas"
 
@@ -156,7 +159,6 @@ sync() {
 # Par extension de if [[ ! -f $journalPath ]], uniquement si le fichier de journalisation existe
 sync $folderA $folderB
 sync $folderB $folderA
-# TODO : supprimer le second ???
 
 # Annonce de fin de script
 info "Synchronisation terminée"

@@ -96,7 +96,7 @@ checkAndCopy() {
   destination=$2
   # Si l'élément passé en argument est un fichier
   if [[ -f $source ]]; then
-    # Copie du fichier avec l'argument -p afin de garder les attributs de ce fichier
+    # Copie du fichier avec l'argument -p afin de garder les attributs de ce fichier (permissions, propriétaire, groupe)
     cp -p $source $destination
     log "Copie $source --> $destination"
 
@@ -104,17 +104,20 @@ checkAndCopy() {
   else
     # Verifie si le propriétaire ou le groupe a changé
     if [[ $(getFileOwner $source) != $(getFileOwner $destination) ]]; then
-      # Vérification de si l'utilisateur du script est root, car seul le root peut lancer chown
+
+      # Vérification si l'utilisateur du script est root, car seul le root peut lancer chown
       if [[ $UID == 0 ]]; then
         chown $(getFileOwner $source) $destination
         log "Changement de propriétaire [$source] pour $destination"
-      # Si l'utilisateur du script n'est pas root 
+
+      # Si l'utilisateur du script n'est pas root
       else
         error "La possession du dossier $source est différente du dossier $destination, seul l'utilisateur root peut modifier cela"
         wantToContinue
       fi
     fi
 
+    # Vérifie si les permissions de source sont différentes de celle de destination
     if [[ $(getFilePermissions $source) != $(getFilePermissions $destination) ]]; then
       chmod $(getFilePermissions $source) $destination 2> /dev/null ||
 
