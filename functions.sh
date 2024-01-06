@@ -17,10 +17,10 @@ error() {
   exit 1
 }
 
-# Utilisée en cas d'erreur
+# Question posé en cas d'erreur dans la boucle
 wantToContinue() {
   while [[ $REPLY != 1 || $REPLY != 2 ]] ; do
-    echo "Voulez-vous continuer la synchronisation ?"
+    echo "Souhaitez-vous continuer la synchronisation malgré cette erreur?"
     echo "1) Oui"
     echo "2) Non"
     unset REPLY
@@ -35,14 +35,17 @@ wantToContinue() {
 
 # Liste le dossier récursivement et supprime le dossier racine
 listFolder() {
+  # Récupère la variable passé en argument
   folderName=$1
+  # Récupére uniquement les noms des fichiers et dossiers dans le dossier passé en argument
   find $folderName | cut -d / -f 2- | sed '1d'
 }
 
-# Journal functions
+# Fonction explicite pour la journalisation des événements
 listFolderExplicit() {
+  # Récupère la variable passé en argument
   folderName=$1
-  # Supprime les lignes commençant par total
+  # Supprime les lignes autres que celle du fichier en argument et formate la sortie
   find $folderName -exec ls -ld --time-style='+%Y-%m-%d-%H-%M-%S' {} + | sed '1d' | sed "s/$folderName\///"
 }
 

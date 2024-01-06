@@ -1,16 +1,15 @@
 #!/bin/bash -e
 source ./functions.sh
 
-# TODO LACHO: Doit pouvoir être overridden par des variables d'environnement du même nom
 # Vérification de la bonne entrée des arguments par l'utilisateur
 if [[ -d $1 ]]; then
-	inputA=$1
+	folderA=$1
 else
 	echo "Le premier argument n'est pas un dossier."
 	exit 1
 fi
 if [[ -d $2 ]]; then
-	inputB=$2
+	folderB=$2
 else
 	echo "Le deuxième argument n'est pas un dossier."
 	exit 1
@@ -19,50 +18,48 @@ fi
 # Création du lien vers le fichier de journalisation 
 journalPath="./journal.txt"
 
-# Supprime les ./ si il existe, très utile quand on fera de la saisie
-inputA=$(echo $inputA | sed 's/^\.\///')
-inputB=$(echo $inputB | sed 's/^\.\///')
+# Supprime les ./ si il existe afin de normaliser leur écriture en cas de besoin
+folderA=$(echo $folderA | sed 's/^\.\///')
+folderB=$(echo $folderB | sed 's/^\.\///')
 
-# Vérifie si les dossiers existent
-[[ -d $inputA ]] || error "Le dossier A n'existe pas"
-[[ -d $inputB ]] || error "Le dossier B n'existe pas"
+# Vérifie si les dossiers existent bien, même sous leur forme normaliser
+[[ -d $folderA ]] || error "Le dossier A n'existe pas"
+[[ -d $folderB ]] || error "Le dossier B n'existe pas"
 
-# Crée le journal s'il n'existe pas et synchronise A --> B
+# Si le journal n'existe pas, il le créait en supprimant tous les fichier de B et synchronisant A vers B
 if [[ ! -f $journalPath ]]; then
-  rm -rf $inputB
-  cp -pr $inputA $inputB
-  log "Copie $inputA --> $inputB"
-  listFolderExplicit $inputA > $journalPath
-  echo "Dossier synchronisé"
+  rm -rf $folderB
+  cp -pr $folderA $folderB
+  log "Copie $folderA --> $folderB"
+  listFolderExplicit $folderA > $journalPath
+  echo "Fichier de journalisation créé et dossier synchronisé"
   exit 0
 fi
 
+# TODO : A supprimer ???? Non utilisé, sert à sortir uniquement le nom de fichier des logs 
 listJournal() {
   cat $journalPath | awk '{print $7}'
 }
 
 sync() {
-
-  folderA=$1
-  folderB=$2
-
+  # Lancement d'une boucle for avec l'intégralité des dossiers et fichiers du folderA
   for file in $(listFolder $folderA); do
-
+	# Récupération des métadatas de chaque fichiers ou dossiers
     metadataA=$(ls $folderA/$file)
-    # Regarde si le fichier existe dans la destination
+    # Regarde si le fichier existe dans le folderB
     if [[ -e $folderB/$file ]]; then
 
-      # Si c'est un fichier dans la source et que c'est un dossier dans la destination
+      # Si c'est un fichier dans le folderA et que c'est un dossier dans le folderB
       if [[ -f $folderA/$file && -d $folderB/$file ]]; then
         warn "Conflit ! $folderA/$file est un fichier et $folderB/$file est un dossier"
         wantToContinue
 
-      # Si c'est un dossier dans la source et que c'est un fichier dans la destination
+      # Si c'est un dossier dans le folderA et que c'est un fichier dans le folderB
       elif [[ -d $folderA/$file && -f $folderB/$file ]]; then
         warn "Conflit ! $folderA/$file est un dossier et $folderB/$file est un fichier"
         wantToContinue
 
-      # Sinon, récupère le fichier dans le journal
+      # Sinon, dans le cas où les deux sont fichiers ou dossiers, récupère le fichier dans le journal
       elif [[ $(getJournalFileName ${file}) ]]; then
         journalDate=$(getJournalFileMetadatas ${file})
 
@@ -121,30 +118,38 @@ sync() {
           fi
         fi
 
+	  # Dans le cas où les deux sont fichiers ou dossiers, mais 
       else
         error "Le fichier journal est incomplet ou incorrect. Veuillez le supprimer"
         exit 1
       fi
 
+	# Si le fichier de la boucle n'existe pas dans le folderB
     else
-      # grep -Fx checks all the line and ignore special character which can be in the ${file}
+      # TODO Lacho : ca veut dire quoi ? grep -Fx checks all the line and ignore special character which can be in the ${file}
+	  # Regarde si ce fichier exite dans le journal d'évenement
+	  # TODO: comprendre ici, pourquoi supprimer si il existe dans le journal ??
       if [[ $(getJournalFileName ${file}) ]]; then
         # Le fichier existe dans le journal
         rm -r $folderA/$file
         log "Remove $folderA/$file"
 
       else
-        # check si le fichier est un dossier ou ono
+        # check si le fichier est un dossier ou non
         [[ -d $folderA/$file ]] && cp -pr $folderA/$file $folderB || cp -p $folderA/$file $folderB/$file
         log "Copie $folderA/$file --> $folderB/$file"
       fi
     fi
   done
 
-  # Ajout dans le journal
+  # Fin d'execution de ce fichier ou dossier de la boucle, donc ajout de l'évenement dans le journal
   listFolderExplicit $folderA > $journalPath
 }
-sync $inputA $inputB
-sync $inputB $inputA
 
+# Lance la fontion de synchronisation de A vers B, puis de B vers A
+# Par extension de if [[ ! -f $journalPath ]], uniquement si le fichier de journalisation existe
+sync $folderA $folderB
+sync $folderB $folderA
+
+# Fin du script
 info "Synchronisation terminée"
