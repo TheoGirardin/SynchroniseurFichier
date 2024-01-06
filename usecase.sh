@@ -1,3 +1,5 @@
+# rm -rf case*/ 
+
 # Cas 1: syncA avec un fichier et syncB avec un fichier identique, sans fichier de journalisation
 mkdir -p case1/syncA case1/syncB
 touch case1/syncA/file.txt
