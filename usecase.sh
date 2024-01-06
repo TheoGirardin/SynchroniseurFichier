@@ -1,8 +1,8 @@
 # Cas 1: syncA avec un fichier et syncB avec un fichier identique, sans fichier de journalisation
-mkdir -p case2/syncA case2/syncB
-touch case2/syncA/file.txt
-cp case2/syncA/file.txt case2/syncB/file.txt
-cp main.sh functions.sh case2/
+mkdir -p case1/syncA case1/syncB
+touch case1/syncA/file.txt
+cp case1/syncA/file.txt case1/syncB/file.txt
+cp main.sh functions.sh case1/
 
 # Cas 2: syncA avec un fichier et syncB avec un fichier identique, avec fichier de journalisation
 mkdir -p case2/syncA case2/syncB
