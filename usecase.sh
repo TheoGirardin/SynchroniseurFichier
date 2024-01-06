@@ -1,8 +1,3 @@
-if [[ ! -f main.sh ]] || [[ ! -f functions.sh ]]; then
-    echo "Les fichiers main.sh et functions.sh doivent être présents dans le répertoire courant."
-    exit 1
-fi
-
 # Cas 1: syncA avec un fichier et syncB avec un fichier identique, sans fichier de journalisation
 mkdir -p case2/syncA case2/syncB
 touch case2/syncA/file.txt
@@ -67,7 +62,7 @@ touch case11/syncA/same_name
 cp main.sh functions.sh case11/
 
 # Cas 12: syncA avec un répertoire, syncB avec un fichier portant le même nom
-mkdir -p case12/syncA/same_name
+mkdir -p case12/syncA/same_name case12/syncB
 touch case12/syncB/same_name
 cp main.sh functions.sh case12/
 
