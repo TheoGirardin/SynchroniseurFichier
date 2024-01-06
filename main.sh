@@ -41,7 +41,7 @@ sync() {
   # Lancement d'une boucle for avec l'intégralité des dossiers et fichiers du folderA
   for file in $(listFolder $folderA); do
 
-    # Regarde si le fichier de la boucle dans folderA existe dans le folderB
+    # Regarde si l'élément de la boucle dans folderA existe dans le folderB
     if [[ -e $folderB/$file ]]; then
 
       # Si c'est un fichier dans le folderA et que c'est un dossier dans le folderB, alors on demande si il souhaite continuer
@@ -57,15 +57,17 @@ sync() {
       elif [[ $(getJournalFileName ${file}) ]]; then
 
         if [[ $(getFileMetadatas $folderA/$file) != $(getFileMetadatas $folderB/$file) ]]; then
-
+          # Supprime la variable de réponse dans la boucle 
           unset REPLY
+
+          # LACHOOOOO
           # Si c'est un fichier: comparer la date et les permission + proprio + groupe pour vérifier si un conflit existe
           # Si c'est un dossier: comprare juste les permission + proprio + groupe
 
           # Récupère les metadatas sur l'élément de la boucle dans le fichier de journalisation
-          journalDate=$(getJournalFileMetadatas ${file})
+          journalMetadas=$(getJournalFileMetadatas ${file})
           # Si l'élément de la boucle est un fichier, alors 
-          if [[ -f $folderA/$file && $journalDate != $(getFileMetadatas $folderA/$file) && $journalDate != $(getFileMetadatas $folderB/$file) ]]; then
+          if [[ -f $folderA/$file && $journalMetadas != $(getFileMetadatas $folderA/$file) && $journalMetadas != $(getFileMetadatas $folderB/$file) ]]; then
             while [[ $REPLY != 1 || $REPLY != 2 ]] ; do
               warn "Conflit sur le fichier $file !"
               echo "1) Garder $folderA/$file"
@@ -86,7 +88,7 @@ sync() {
             done
 
           # Si l'élément de la boucle est un dossier, compare le seulement les droits, le proprio et le groupe
-          elif [[ -d $folderA/$file && $journalDate != $(getFolderMetadatas $folderA/$file) && $journalDate != $(getFolderMetadatas $folderB/$file) ]]; then
+          elif [[ -d $folderA/$file && $journalMetadas != $(getFolderMetadatas $folderA/$file) && $journalMetadas != $(getFolderMetadatas $folderB/$file) ]]; then
 
             while [[ $REPLY != 1 || $REPLY != 2 ]] ; do
               warn "Conflit sur le dossier $file !"
@@ -104,22 +106,22 @@ sync() {
             done
 
           else
-            if [[ $journalDate !=  $(getFileMetadatas $folderA/$file) ]]; then
+            if [[ $journalMetadas !=  $(getFileMetadatas $folderA/$file) ]]; then
               checkAndCopy $folderA/$file $folderB/$file
 
-            elif [[ $journalDate !=  $(getFileMetadatas $folderB/$file) ]]; then
+            elif [[ $journalMetadas !=  $(getFileMetadatas $folderB/$file) ]]; then
               checkAndCopy $folderB/$file $folderA/$file
             fi
           fi
         fi
 
-	  # Dans le cas où les deux sont fichiers ou dossiers, mais que l'élément de la boucle n'existe pas dans le fichier de journalisation 
+	    # Dans le cas où les deux éléments sont fichiers ou dossiers, mais que l'élément de la boucle n'existe pas dans le fichier de journalisation 
       else
         error "Le fichier journal est incomplet ou incorrect. Veuillez le supprimer"
         exit 1
       fi
 
-	  # Si le fichier de la boucle n'existe pas dans le folderB
+	  # Si l'élément de la boucle n'existe pas dans le folderB
     else
 	    # Regarde si ce fichier exite dans le journal d'évenement
 	    # TODO: comprendre ici, pourquoi supprimer si il existe dans le journal ??
@@ -128,6 +130,7 @@ sync() {
         rm -r $folderA/$file
         log "Remove $folderA/$file"
 
+      # Si l'élément de la boucle 
       else
         # check si le fichier est un dossier ou non
         [[ -d $folderA/$file ]] && cp -pr $folderA/$file $folderB || cp -p $folderA/$file $folderB/$file
@@ -140,10 +143,11 @@ sync() {
   listFolderExplicit $folderA > $journalPath
 }
 
-# Lance la fontion de synchronisation de A vers B, puis de B vers A
+# Lance la fontion de synchronisation de A vers B, puis de B vers A 
 # Par extension de if [[ ! -f $journalPath ]], uniquement si le fichier de journalisation existe
 sync $folderA $folderB
 sync $folderB $folderA
+# TODO : supprimer le second ???
 
-# Fin du script
+# Annonce de fin de script
 info "Synchronisation terminée"

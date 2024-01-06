@@ -33,81 +33,83 @@ wantToContinue() {
   done
 }
 
-# Liste le dossier récursivement et supprime le dossier racine
+# Liste uniquement les noms des éléments du dossier passé en argument et supprime le dossier racine de cette liste
 listFolder() {
-  # Récupère la variable passé en argument
   folderName=$1
-  # Récupére uniquement les noms des fichiers et dossiers dans le dossier passé en argument
   find $folderName | cut -d / -f 2- | sed '1d'
 }
 
-# Fonction explicite pour la journalisation des événements
+# Liste les éléments du dossier passé en argument en récupérant des détails sur chacun, formatte les noms et supprime le dossier racine de cette liste
 listFolderExplicit() {
-  # Récupère la variable passé en argument
   folderName=$1
-  # Supprime les lignes autres que celle du fichier en argument et formate la sortie
   find $folderName -exec ls -ld --time-style='+%Y-%m-%d-%H-%M-%S' {} + | sed '1d' | sed "s/$folderName\///"
 }
 
+# Récupère les permissions, le propriétaire, le groupe, la taille et la date de dernière modification d'un fichier
 getFileMetadatas() {
-  ls -ld --time-style='+%Y-%m-%d-%H-%M-%S' $1 | awk '{print $1,$3,$4,$5,$6}'
+  fileName=$1
+  ls -ld --time-style='+%Y-%m-%d-%H-%M-%S' $fileName | awk '{print $1,$3,$4,$5,$6}'
 }
 
-getFileOwner() {
-  ls -ld $1 | awk '{print $3,$4}' | sed 's/\ /\:/'
-}
-
-# Help with https://bit.ly/3dqAJcN
-# Prints the permissions in octal
-getFilePermissions() {
-  ls -ld $1 | awk '{k=0;for(i=0;i<=8;i++)k+=((substr($1,i+2,1)~/[rwx]/)*2^(8-i));if(k)printf("%0o ",k);print $1}' | cut -c -3
-}
-
-# Retourne le nom de fichier si celui ci existe dans le fichier de journalisation
+# Cherche dans le fichier de journalisation les entrées où le nom de fichier est exactement le même que celui passé en argument
 getJournalFileName() {
-  # Récupère la variable passé en argument
-  file=$1
-  # Cherche dans le fichier de journalisation les entrées où le nom de fichier est exactement le même que celui passé en argument
-  cat $journalPath | awk '{print $7}' | grep -Fx "$file"
+  fileName=$1
+  cat $journalPath | awk '{print $7}' | grep -Fx "$fileName"
 }
 
 # Retourne à quelle ligne du fichier de journalisation le fichier se situe
 getJournalFileLineLocation() {
-  # Récupère la variable passé en argument
-  file=$1
+  fileName=$1
   # Cherche dans le fichier de journalisation les entrées où le nom de fichier est exactement le même que celui passé en argument, avec sa ligne
-  cat $journalPath | awk '{print $7}' | grep -Fnx "$file" | cut -d : -f 1
+  cat $journalPath | awk '{print $7}' | grep -Fnx "$fileName" | cut -d : -f 1
+  ## TODO : Ajout de "| tail -n 1" à la fin des commandes ???? 
 }
 
 getJournalFileMetadatas() {
-  # Récupère la variable passé en argument
-  file=$1
-  # 
-  line=$(getJournalFileLineLocation $file)
+  fileName=$1
+  line=$(getJournalFileLineLocation $fileName)
   cat $journalPath | awk '{print $1,$3,$4,$5,$6}' | sed -n "${line}p"
 }
 
-# Récupère les métadonnées utiles d'un dossier (droits, proprio, groupe)
+# Récupère le propriètaire et le groupe d'un fichier
 getFolderMetadatas() {
-  folder=$1
-  ls -ld $folder | awk '{print ($1,$3,$4)}'
+  folderName=$1
+  ls -ld $folderName | awk '{print ($1,$3,$4)}'
+}
+
+# Avec l'aide de https://bit.ly/3dqAJcN
+# Récupère les permissions d'un fichier sous sa forme octal (755)
+getFilePermissions() {
+  fileName=$1
+  ls -ld $fileName | awk '{k=0;for(i=0;i<=8;i++)k+=((substr($1,i+2,1)~/[rwx]/)*2^(8-i));if(k)printf("%0o ",k);print $1}' | cut -c -3
+}
+
+# Récupère le propriètaire et le groupe d'un fichier et remplace l'espace par deux points (root:root)
+getFileOwner() {
+  fileName=$1
+  ls -ld $fileName | awk '{print $3,$4}' | sed 's/\ /\:/'
 }
 
 # $1 source -> FolderA
 # $2 dest -> FolderB
 checkAndCopy() {
+  # Si l'élément passé en argument est un fichier
   if [[ -f $1 ]]; then
+    # Copie du fichier avec l'argument -p afin de garder les attributs de ce fichier
     cp -p $1 $2
     log "Copie $1 --> $2"
+
+  # Si l'élément passé en argument est un dossier
   else
-    # Verifie si le proprio/groupe a changé
+    # Verifie si le propriétaire ou le groupe a changé
     if [[ $(getFileOwner $1) != $(getFileOwner $2) ]]; then
-      # Seul le root peut lancer chown, verification si on est root
+      # Vérification de si l'utilisateur du script est root, car seul le root peut lancer chown
       if [[ $UID == 0 ]]; then
         chown $(getFileOwner $1) $2
         log "Changement de propriétaire [$1] pour $2"
+      # Si l'utilisateur du script n'est pas root 
       else
-        error "La possession du dossier $1 est différente du dossier $2 et seul le root peut le modifier"
+        error "La possession du dossier $1 est différente du dossier $2, seul l'utilisateur root peut modifier cela"
         wantToContinue
       fi
     fi
@@ -116,7 +118,7 @@ checkAndCopy() {
       chmod $(getFilePermissions $1) $2 2> /dev/null ||
 
       if [[ $(chmod $(getFilePermissions $1) $2) ]]; then
-        log "Chagnement de droits [$1] pour $2"
+        log "Changement de droits [$1] pour $2"
 
       else
         error "Vous n'avez pas les droits pour modifier $2"
