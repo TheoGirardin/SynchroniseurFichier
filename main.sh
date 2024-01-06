@@ -15,7 +15,7 @@ else
 	exit 1
 fi
 
-# Création du lien vers le fichier de journalisation 
+# Création de la variable vers le fichier de journalisation 
 journalPath="./journal.txt"
 
 # Supprime les ./ si il existe afin de normaliser leur écriture en cas de besoin
@@ -56,30 +56,36 @@ sync() {
       # Sinon, dans le cas où les deux sont fichiers ou dossiers, vérifie si ce fichier a déjà été enregistré dans le fichier de journalisation
       elif [[ $(getJournalFileName ${file}) ]]; then
 
+        # Vérifie si les métadatas des deux éléments sont différents, sinon passe au prochain élément de la boucle
         if [[ $(getFileMetadatas $folderA/$file) != $(getFileMetadatas $folderB/$file) ]]; then
           # Supprime la variable de réponse dans la boucle 
           unset REPLY
-
-          # LACHOOOOO
-          # Si c'est un fichier: comparer la date et les permission + proprio + groupe pour vérifier si un conflit existe
-          # Si c'est un dossier: comprare juste les permission + proprio + groupe
-
           # Récupère les metadatas sur l'élément de la boucle dans le fichier de journalisation
           journalMetadas=$(getJournalFileMetadatas ${file})
-          # Si l'élément de la boucle est un fichier, alors 
+
+          # Si l'élément de la boucle est un fichier,
+            # compare la date de dernière modification, les permissions, le propriètaire et le groupe pour vérifier si un conflit existe
+          # Si l'élément de la boucle est un dossier,
+            # compare les permissions, le propriètaire et le groupe pour vérifier si un conflit existe
+
+          # Si l'élément de la boucle est un fichier, et que les métadonnées du fichier sont différent de ceux enregistrée dans la journalisation 
           if [[ -f $folderA/$file && $journalMetadas != $(getFileMetadatas $folderA/$file) && $journalMetadas != $(getFileMetadatas $folderB/$file) ]]; then
+            # Alors il y a un conflit entre deux fichiers
             while [[ $REPLY != 1 || $REPLY != 2 ]] ; do
               warn "Conflit sur le fichier $file !"
               echo "1) Garder $folderA/$file"
               echo "2) Garder $folderB/$file"
               echo "3) Afficher les différences"
               read
+              # Soit le fichier de A et copié vers B 
               if [[ $REPLY == 1 ]]; then
                 checkAndCopy $folderA/$file $folderB/$file
                 break
+              # Soit le fichier de B et copié vers A 
               elif [[ $REPLY == 2 ]]; then
                 checkAndCopy $folderB/$file $folderA/$file
                 break
+              # Soit en affiche les différences afin de savoir lequels garder
               elif [[ $REPLY == 3 ]]; then
                 if [[ -f $folderA/$file ]]; then
                   diff -y --suppress-common-lines $folderA/$file $folderB/$file || true
@@ -87,28 +93,31 @@ sync() {
               fi
             done
 
-          # Si l'élément de la boucle est un dossier, compare le seulement les droits, le proprio et le groupe
+          # Si l'élément de la boucle est un dossier, et que les métadonnées du dossier sont différent de ceux enregistrée dans la journalisation 
           elif [[ -d $folderA/$file && $journalMetadas != $(getFolderMetadatas $folderA/$file) && $journalMetadas != $(getFolderMetadatas $folderB/$file) ]]; then
-
+            # Alors il y a un conflit entre deux dossiers
             while [[ $REPLY != 1 || $REPLY != 2 ]] ; do
               warn "Conflit sur le dossier $file !"
               echo "1) Garder $folderA/$file [$(getFolderMetadatas $folderA/$file)]"
               echo "2) Garder $folderB/$file [$(getFolderMetadatas $folderB/$file)]"
               read
-
+              # Soit le dossier de A et copié vers B 
               if [[ $REPLY == 1 ]]; then
                 checkAndCopy $folderA/$file $folderB/$file
                 break
+              # Soit le dossier de B et copié vers A 
               elif [[ $REPLY == 2 ]]; then
                 checkAndCopy $folderB/$file $folderA/$file
                 break
               fi
             done
 
+          # Si les métadonnées de l'élément sont différent de ceux enregistrée dans la journalisation pour seulement l'un des deux, alors
           else
+            # Si il y a eu une modification du folderA uniquement, alors A est copié vers B 
             if [[ $journalMetadas !=  $(getFileMetadatas $folderA/$file) ]]; then
               checkAndCopy $folderA/$file $folderB/$file
-
+            # Si il y a eu une modification du folderB uniquement, alors B est copié vers A 
             elif [[ $journalMetadas !=  $(getFileMetadatas $folderB/$file) ]]; then
               checkAndCopy $folderB/$file $folderA/$file
             fi

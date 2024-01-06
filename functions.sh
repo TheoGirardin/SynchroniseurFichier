@@ -57,21 +57,21 @@ getJournalFileName() {
   cat $journalPath | awk '{print $7}' | grep -Fx "$fileName"
 }
 
-# Retourne à quelle ligne du fichier de journalisation le fichier se situe
+# Cherche dans le fichier de journalisation les entrées où le nom de fichier est exactement le même que celui passé en argument, et renvoie sa ligne
 getJournalFileLineLocation() {
   fileName=$1
-  # Cherche dans le fichier de journalisation les entrées où le nom de fichier est exactement le même que celui passé en argument, avec sa ligne
   cat $journalPath | awk '{print $7}' | grep -Fnx "$fileName" | cut -d : -f 1
   ## TODO : Ajout de "| tail -n 1" à la fin des commandes ???? 
 }
 
+# Récupère uniquement les permissions, le propriétaire, le groupe, la taille et date de dernière modification du fichier passé en argument dans le fichier de journalisation 
 getJournalFileMetadatas() {
   fileName=$1
   line=$(getJournalFileLineLocation $fileName)
   cat $journalPath | awk '{print $1,$3,$4,$5,$6}' | sed -n "${line}p"
 }
 
-# Récupère le propriètaire et le groupe d'un fichier
+# Récupère les permissions, le propriètaire et le groupe d'un dossier
 getFolderMetadatas() {
   folderName=$1
   ls -ld $folderName | awk '{print ($1,$3,$4)}'
@@ -90,38 +90,39 @@ getFileOwner() {
   ls -ld $fileName | awk '{print $3,$4}' | sed 's/\ /\:/'
 }
 
-# $1 source -> FolderA
-# $2 dest -> FolderB
+# Permet la synchronisation d'un fichier ou dossier de la source vers la destination en vérifiant les permissions des dossiers
 checkAndCopy() {
+  source=$1
+  destination=$2
   # Si l'élément passé en argument est un fichier
-  if [[ -f $1 ]]; then
+  if [[ -f $source ]]; then
     # Copie du fichier avec l'argument -p afin de garder les attributs de ce fichier
-    cp -p $1 $2
-    log "Copie $1 --> $2"
+    cp -p $source $destination
+    log "Copie $source --> $destination"
 
-  # Si l'élément passé en argument est un dossier
+  # Si l'élément passé en argument n'est pas un fichier
   else
     # Verifie si le propriétaire ou le groupe a changé
-    if [[ $(getFileOwner $1) != $(getFileOwner $2) ]]; then
+    if [[ $(getFileOwner $source) != $(getFileOwner $destination) ]]; then
       # Vérification de si l'utilisateur du script est root, car seul le root peut lancer chown
       if [[ $UID == 0 ]]; then
-        chown $(getFileOwner $1) $2
-        log "Changement de propriétaire [$1] pour $2"
+        chown $(getFileOwner $source) $destination
+        log "Changement de propriétaire [$source] pour $destination"
       # Si l'utilisateur du script n'est pas root 
       else
-        error "La possession du dossier $1 est différente du dossier $2, seul l'utilisateur root peut modifier cela"
+        error "La possession du dossier $source est différente du dossier $destination, seul l'utilisateur root peut modifier cela"
         wantToContinue
       fi
     fi
 
-    if [[ $(getFilePermissions $1) != $(getFilePermissions $2) ]]; then
-      chmod $(getFilePermissions $1) $2 2> /dev/null ||
+    if [[ $(getFilePermissions $source) != $(getFilePermissions $destination) ]]; then
+      chmod $(getFilePermissions $source) $destination 2> /dev/null ||
 
-      if [[ $(chmod $(getFilePermissions $1) $2) ]]; then
-        log "Changement de droits [$1] pour $2"
+      if [[ $(chmod $(getFilePermissions $source) $destination) ]]; then
+        log "Changement de droits [$source] pour $destination"
 
       else
-        error "Vous n'avez pas les droits pour modifier $2"
+        error "Vous n'avez pas les droits pour modifier $destination"
         wantToContinue
       fi
     fi
