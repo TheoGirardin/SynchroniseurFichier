@@ -45,8 +45,17 @@ sync() {
   elementA=$1
   elementB=$2
 
+  # Déclaration d'un tableau associatif pour les fichiers copié recursivement
+  declare -A copiedDirs=()
+
   # Lancement d'une boucle for avec l'intégralité des dossiers et fichiers du elementA
   for file in $(listFolder $elementA); do
+  
+    # Vérifie que l'élément n'est pas déjà été copié de manière récursive
+    dirName=$(dirname "$file")
+    if [[ ${copiedDirs[$dirName]} ]]; then
+      continue
+    fi
 
     # Si l'élément de la boucle dans elementA existe dans elementB
     if [[ -e $elementB/$file ]]; then
@@ -154,6 +163,8 @@ sync() {
           # Copie le dossier récursivement de elementA vers elementB
           cp -pr $elementA/$file $elementB
           log "Copie du dossier récursivement $elementA/$file --> $elementB"
+          # Note ce dossier comment ayant été copié recursivement
+          copiedDirs[$file]=true
         elif [[ -L $elementA/$file ]]; then
           # Copie le lien symbolique de elementA vers elementB
           cp -P $elementA/$file $elementB
