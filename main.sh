@@ -41,26 +41,30 @@ fi
 
 # Début de la fonction principale de ce script
 sync() {
-  # Lancement d'une boucle for avec l'intégralité des dossiers et fichiers du folderA
-  for file in $(listFolder $folderA); do
+  # Assignation des variables pour la fonction
+  elementA=$1
+  elementB=$2
 
-    # Regarde si l'élément de la boucle dans folderA existe dans folderB
-    if [[ -e $folderB/$file ]]; then
+  # Lancement d'une boucle for avec l'intégralité des dossiers et fichiers du elementA
+  for file in $(listFolder $elementA); do
 
-      # Si c'est un fichier dans folderA et que c'est un dossier dans folderB, alors on demande s'il souhaite continuer
-      if [[ -f $folderA/$file && -d $folderB/$file ]]; then
-        warn "Conflit ! $folderA/$file est un fichier et $folderB/$file est un dossier"
+    # Si l'élément de la boucle dans elementA existe dans elementB
+    if [[ -e $elementB/$file ]]; then
+
+      # Si c'est un fichier dans elementA et que c'est un dossier dans elementB, alors on demande s'il souhaite continuer
+      if [[ -f $elementA/$file && -d $elementB/$file ]]; then
+        warn "Conflit ! $elementA/$file est un fichier et $elementB/$file est un dossier"
         wantToContinue
-      # Si c'est un dossier dans folderA et que c'est un fichier dans folderB, alors on demande s'il souhaite continuer
-      elif [[ -d $folderA/$file && -f $folderB/$file ]]; then
-        warn "Conflit ! $folderA/$file est un dossier et $folderB/$file est un fichier"
+      # Si c'est un dossier dans elementA et que c'est un fichier dans elementB, alors on demande s'il souhaite continuer
+      elif [[ -d $elementA/$file && -f $elementB/$file ]]; then
+        warn "Conflit ! $elementA/$file est un dossier et $elementB/$file est un fichier"
         wantToContinue
 
       # Sinon, dans le cas où les deux sont fichiers ou dossiers, vérifie si ce fichier a déjà été enregistré dans le fichier de journalisation
       elif [[ $(getJournalFileName ${file}) ]]; then
 
         # Vérifie si les métadonnées des deux éléments sont différentes, sinon passe au prochain élément de la boucle
-        if [[ $(getFileMetadatas $folderA/$file) != $(getFileMetadatas $folderB/$file) ]]; then
+        if [[ $(getFileMetadatas $elementA/$file) != $(getFileMetadatas $elementB/$file) ]]; then
           # Supprime la variable de réponse dans la boucle 
           unset REPLY
           # Récupère les metadatas sur l'élément de la boucle dans le fichier de journalisation
@@ -72,57 +76,57 @@ sync() {
             # compare les permissions, le propriètaire et le groupe pour vérifier si un conflit existe
 
           # Si l'élément de la boucle est un fichier, et que les métadonnées du fichier sont différent de ceux enregistrée dans la journalisation 
-          if [[ -f $folderA/$file && $journalMetadas != $(getFileMetadatas $folderA/$file) && $journalMetadas != $(getFileMetadatas $folderB/$file) ]]; then
+          if [[ -f $elementA/$file && $journalMetadas != $(getFileMetadatas $elementA/$file) && $journalMetadas != $(getFileMetadatas $elementB/$file) ]]; then
             # Alors il y a un conflit entre deux fichiers
             while [[ $REPLY != 1 || $REPLY != 2 ]] ; do
               warn "Conflit sur le fichier $file !"
-              echo "1) Garder $folderA/$file"
-              echo "2) Garder $folderB/$file"
+              echo "1) Garder $elementA/$file"
+              echo "2) Garder $elementB/$file"
               echo "3) Afficher les différences"
               read
               # Soit le fichier de A et copié vers B 
               if [[ $REPLY == 1 ]]; then
-                checkAndCopy $folderA/$file $folderB/$file
+                checkAndCopy $elementA/$file $elementB/$file
                 break
               # Soit le fichier de B et copié vers A 
               elif [[ $REPLY == 2 ]]; then
-                checkAndCopy $folderB/$file $folderA/$file
+                checkAndCopy $elementB/$file $elementA/$file
                 break
               # Soit en affiche les différences afin de savoir lequels garder
               elif [[ $REPLY == 3 ]]; then
-                if [[ -f $folderA/$file ]]; then
-                  diff -y --suppress-common-lines $folderA/$file $folderB/$file || true
+                if [[ -f $elementA/$file ]]; then
+                  diff -y --suppress-common-lines $elementA/$file $elementB/$file || true
                 fi
               fi
             done
 
           # Si l'élément de la boucle est un dossier, et que les métadonnées du dossier sont différent de ceux enregistrée dans la journalisation 
-          elif [[ -d $folderA/$file && $journalMetadas != $(getFolderMetadatas $folderA/$file) && $journalMetadas != $(getFolderMetadatas $folderB/$file) ]]; then
+          elif [[ -d $elementA/$file && $journalMetadas != $(getFolderMetadatas $elementA/$file) && $journalMetadas != $(getFolderMetadatas $elementB/$file) ]]; then
             # Alors il y a un conflit entre deux dossiers
             while [[ $REPLY != 1 || $REPLY != 2 ]] ; do
               warn "Conflit sur le dossier $file !"
-              echo "1) Garder $folderA/$file [$(getFolderMetadatas $folderA/$file)]"
-              echo "2) Garder $folderB/$file [$(getFolderMetadatas $folderB/$file)]"
+              echo "1) Garder $elementA/$file [$(getFolderMetadatas $elementA/$file)]"
+              echo "2) Garder $elementB/$file [$(getFolderMetadatas $elementB/$file)]"
               read
               # Soit le dossier de A et copié vers B 
               if [[ $REPLY == 1 ]]; then
-                checkAndCopy $folderA/$file $folderB/$file
+                checkAndCopy $elementA/$file $elementB/$file
                 break
               # Soit le dossier de B et copié vers A 
               elif [[ $REPLY == 2 ]]; then
-                checkAndCopy $folderB/$file $folderA/$file
+                checkAndCopy $elementB/$file $elementA/$file
                 break
               fi
             done
 
           # Si les métadonnées de l'élément sont différentes de celles enregistrées dans la journalisation pour seulement l'un des deux, alors
           else
-            # Si il y a eu une modification du folderA uniquement, alors A est copié vers B 
-            if [[ $journalMetadas !=  $(getFileMetadatas $folderA/$file) ]]; then
-              checkAndCopy $folderA/$file $folderB/$file
-            # Si il y a eu une modification du folderB uniquement, alors B est copié vers A 
-            elif [[ $journalMetadas !=  $(getFileMetadatas $folderB/$file) ]]; then
-              checkAndCopy $folderB/$file $folderA/$file
+            # Si il y a eu une modification du elementA uniquement, alors A est copié vers B 
+            if [[ $journalMetadas !=  $(getFileMetadatas $elementA/$file) ]]; then
+              checkAndCopy $elementA/$file $elementB/$file
+            # Si il y a eu une modification du elementB uniquement, alors B est copié vers A 
+            elif [[ $journalMetadas !=  $(getFileMetadatas $elementB/$file) ]]; then
+              checkAndCopy $elementB/$file $elementA/$file
             fi
           fi
         fi
@@ -133,26 +137,32 @@ sync() {
         exit 1
       fi
 
-	  # Si l'élément de la boucle n'existe pas dans folderB
+	  # Si l'élément de la boucle n'existe pas dans elementB
     else
-	    # Regarde si ce fichier exite dans le journal d'évenement
-	    # TODO: comprendre ici, pourquoi supprimer si il existe dans le journal ??
+	    # Si l'élément de la boucle est présent dans le journal de normalisation 
       if [[ $(getJournalFileName ${file}) ]]; then
-        # Le fichier existe dans le journal
-        rm -r $folderA/$file
-        log "Remove $folderA/$file"
+        # Alors on supprime de l'elementA car il a été supprimé dans elementB 
+        rm -r $elementA/$file
+        log "Remove $elementA/$file"
 
-      # Si l'élément de la boucle 
+      # Si l'élément de la boucle n'est pas présent dans le fichier de journalisation
       else
-        # check si le fichier est un dossier ou non
-        [[ -d $folderA/$file ]] && cp -pr $folderA/$file $folderB || cp -p $folderA/$file $folderB/$file
-        log "Copie $folderA/$file --> $folderB/$file"
+        # Alors on le copie dans elementB car il a été créé dans elementA
+        if [[ -d $elementA/$file ]]; then
+          # Copie le dossier récursivement de elementA vers elementB
+          cp -pr $elementA/$file $elementB
+          log "Copie $elementA/$file --> $elementB"
+        else
+          # Sinon, suppose que c'est un fichier et le copie de elementA vers elementB
+          cp -p $elementA/$file $elementB/$file
+          log "Copie $elementA/$file --> $elementB/$file"
+        fi
       fi
     fi
   done
 
-  # Fin d'exécution de ce fichier ou dossier de la boucle, donc ajout de l'événement dans le journal
-  listFolderExplicit $folderA > $journalPath
+  # Fin d'exécution de ce fichier ou dossier de la boucle, donc enfin on ajoute l'événement dans le journal
+  listFolderExplicit $elementA > $journalPath
 }
 
 # Lance la fonction de synchronisation de A vers B, puis de B vers A

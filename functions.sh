@@ -98,8 +98,8 @@ checkAndCopy() {
   if [[ -f $source ]]; then
     # Copie du fichier avec l'argument -p afin de garder les attributs de ce fichier (permissions, propriétaire, groupe)
     cp -p $source $destination
-    log "Copie $source --> $destination"
-
+    log "Copie du fichier $source --> $destination"
+  
   # Si l'élément passé en argument n'est pas un fichier
   else
     # Vérifie si le propriétaire ou le groupe a changé

@@ -1,16 +1,16 @@
+#!/bin/bash -e
 # rm -rf case*/ 
 
-# Cas 1: syncA avec un fichier et syncB avec un fichier identique, sans fichier de journalisation
-mkdir -p case1/syncA case1/syncB
-touch case1/syncA/file.txt
-cp case1/syncA/file.txt case1/syncB/file.txt
-cp main.sh functions.sh case1/
+listFolderExplicit() {
+  folderName=$1
+  find "$folderName" -exec ls -ld --time-style='+%Y-%m-%d-%H-%M-%S' {} + | sed '1d' | sed "s|${folderName}/||"
+}
 
-# Cas 2: syncA avec un fichier et syncB avec un fichier identique, avec fichier de journalisation
-mkdir -p case2/syncA case2/syncB
-touch case2/syncA/file.txt
-cp case2/syncA/file.txt case2/syncB/file.txt
-cp main.sh functions.sh case2/
+# Cas 1 et 2: syncA avec un fichier et syncB avec un fichier identique, sans fichier de journalisation puis syncA avec un fichier et syncB avec un fichier identique, avec fichier de journalisation
+mkdir -p case1-2/syncA case1-2/syncB
+touch case1-2/syncA/file.txt
+cp case1-2/syncA/file.txt case1-2/syncB/file.txt
+cp main.sh functions.sh case1-2/
 
 # Cas 3: syncA avec un fichier, syncB vide, sans fichier de journalisation
 mkdir -p case3/syncA case3/syncB
@@ -36,16 +36,20 @@ cp main.sh functions.sh case6/
 
 # Cas 7: syncA avec un fichier modifié, syncB avec le fichier original, avec fichier de journalisation
 mkdir -p case7/syncA case7/syncB
-echo "Version modifiée" > case7/syncA/file.txt
 echo "Version originale" > case7/syncB/file.txt
+sleep 0.8
+echo "Version modifiée" > case7/syncA/file.txt
 touch case7/journal.txt
+listFolderExplicit case7/syncB > case7/journal.txt
 cp main.sh functions.sh case7/
 
 # Cas 8: syncA avec le fichier original, syncB avec un fichier modifié, avec fichier de journalisation
 mkdir -p case8/syncA case8/syncB
 echo "Version originale" > case8/syncA/file.txt
+sleep 0.8
 echo "Version modifiée" > case8/syncB/file.txt
 touch case8/journal.txt
+listFolderExplicit case8/syncA > case8/journal.txt
 cp main.sh functions.sh case8/
 
 # Cas 9: syncA avec un répertoire, syncB vide, avec fichier de journalisation
@@ -61,23 +65,27 @@ cp main.sh functions.sh case10/
 # Cas 11: syncA avec un fichier, syncB avec un répertoire portant le même nom
 mkdir -p case11/syncA case11/syncB/same_name
 touch case11/syncA/same_name
+listFolderExplicit case11/syncA > case11/journal.txt
 cp main.sh functions.sh case11/
 
 # Cas 12: syncA avec un répertoire, syncB avec un fichier portant le même nom
 mkdir -p case12/syncA/same_name case12/syncB
 touch case12/syncB/same_name
+listFolderExplicit case12/syncA > case12/journal.txt
 cp main.sh functions.sh case12/
 
 # Cas 13: syncA avec un lien symbolique, syncB avec le fichier cible du lien
 mkdir -p case13/syncA case13/syncB
 touch case13/syncB/target_file.txt
 ln -s ../syncB/target_file.txt case13/syncA/symlink
+listFolderExplicit case13/syncA > case13/journal.txt
 cp main.sh functions.sh case13/
 
 # Cas 14: syncA avec le fichier cible du lien, syncB avec un lien symbolique
 mkdir -p case14/syncA case14/syncB
 touch case14/syncA/target_file.txt
 ln -s ../syncA/target_file.txt case14/syncB/symlink
+listFolderExplicit case14/syncA > case14/journal.txt
 cp main.sh functions.sh case14/
 
 # Cas 15: syncA avec un fichier ayant des permissions/modifications différentes, syncB avec le fichier original
@@ -135,8 +143,8 @@ mkdir -p case22/syncA case22/syncB
 
 touch case22/syncA/fileA.txt
 touch case22/syncB/fileB.txt
-sudo useradd user1
-sudo useradd user2
-sudo chown user1 case22/syncA/fileA.txt
-sudo chown user2 case22/syncB/fileB.txt
+sudo useradd user1 2> /dev/null
+sudo useradd user2 2> /dev/null
+sudo chown user1 case22/syncA/fileA.txt 
+sudo chown user2 case22/syncB/fileB.txt 
 cp main.sh functions.sh case22/
