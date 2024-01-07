@@ -22,8 +22,8 @@ fi
 journalPath="./journal.txt"
 
 # Supprime les './' des variables afin de normaliser leur écriture pour leur traitement dans le script
-folderA=$(echo $folderA | sed 's/^\.\///')
-folderB=$(echo $folderB | sed 's/^\.\///')
+folderA=$(echo $folderA | sed 's|^\./||')
+folderB=$(echo $folderB | sed 's|^\./||')
 
 # Vérifie si les dossiers existent bien sous leur forme normalisée
 [[ -d $folderA ]] || error "Le dossier A n'existe pas"
@@ -51,13 +51,15 @@ sync() {
     # Si l'élément de la boucle dans elementA existe dans elementB
     if [[ -e $elementB/$file ]]; then
 
-      # Si c'est un fichier dans elementA et que c'est un dossier dans elementB, alors on demande s'il souhaite continuer
-      if [[ -f $elementA/$file && -d $elementB/$file ]]; then
+      # Vérifie si l'élément est un fichier ou un lien symbolique dans elementA et un dossier dans elementB, ou vice versa
+      if [[ (-f $elementA/$file && ! -L $elementA/$file) && -d $elementB/$file ]]; then
         warn "Conflit ! $elementA/$file est un fichier et $elementB/$file est un dossier"
         wantToContinue
-      # Si c'est un dossier dans elementA et que c'est un fichier dans elementB, alors on demande s'il souhaite continuer
-      elif [[ -d $elementA/$file && -f $elementB/$file ]]; then
+      elif [[ -d $elementA/$file && (-f $elementB/$file && ! -L $elementB/$file) ]]; then
         warn "Conflit ! $elementA/$file est un dossier et $elementB/$file est un fichier"
+        wantToContinue
+      elif [[ -L $elementA/$file && ! -d $elementB/$file && ! -f $elementB/$file ]]; then
+        warn "Conflit ! $elementA/$file est un lien symbolique et $elementB/$file est un fichier ou un dossier"
         wantToContinue
 
       # Sinon, dans le cas où les deux sont fichiers ou dossiers, vérifie si ce fichier a déjà été enregistré dans le fichier de journalisation
@@ -139,23 +141,27 @@ sync() {
 
 	  # Si l'élément de la boucle n'existe pas dans elementB
     else
-	    # Si l'élément de la boucle est présent dans le journal de normalisation 
+	    # On regarde si l'élément il est présent dans le fichier de journalisation
       if [[ $(getJournalFileName ${file}) ]]; then
-        # Alors on supprime de l'elementA car il a été supprimé dans elementB 
+        # Si oui, alors on supprime de l'elementA car cela signifie qu'il a été supprimé dans elementB 
         rm -r $elementA/$file
         log "Remove $elementA/$file"
 
       # Si l'élément de la boucle n'est pas présent dans le fichier de journalisation
       else
-        # Alors on le copie dans elementB car il a été créé dans elementA
+        # Alors on le copie dans elementB car il a été créé dans elementA depuis la dernière synchronisation
         if [[ -d $elementA/$file ]]; then
           # Copie le dossier récursivement de elementA vers elementB
           cp -pr $elementA/$file $elementB
-          log "Copie $elementA/$file --> $elementB"
+          log "Copie du dossier récursivement $elementA/$file --> $elementB"
+        elif [[ -L $elementA/$file ]]; then
+          # Copie le lien symbolique de elementA vers elementB
+          cp -P $elementA/$file $elementB
+          log "Copie du lien symbolique $elementA/$file --> $elementB"
         else
-          # Sinon, suppose que c'est un fichier et le copie de elementA vers elementB
+          # Sinon, c'est un fichier copié de elementA vers elementB
           cp -p $elementA/$file $elementB/$file
-          log "Copie $elementA/$file --> $elementB/$file"
+          log "Copie du fichier $elementA/$file --> $elementB/$file"
         fi
       fi
     fi

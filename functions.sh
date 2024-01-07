@@ -42,7 +42,13 @@ listFolder() {
 # Liste les éléments du dossier passé en argument en récupérant des détails sur chacun, formate les noms et supprime le dossier racine de cette liste
 listFolderExplicit() {
   folderName=$1
-  find $folderName -exec ls -ld --time-style='+%Y-%m-%d-%H-%M-%S' {} + | sed '1d' | sed "s/$folderName\///"
+  for item in $(find $folderName -mindepth 1); do
+    if [[ -L $item ]]; then
+      ls -l --time-style='+%Y-%m-%d-%H-%M-%S' "$item"
+    elif [[ -f $item || -d $item ]]; then
+      ls -ld --time-style='+%Y-%m-%d-%H-%M-%S' "$item"
+    fi
+  done | sed "s|$folderName/||"
 }
 
 # Récupère les permissions, le propriétaire, le groupe, la taille et la date de dernière modification d'un fichier
@@ -87,15 +93,21 @@ getFilePermissions() {
 # Récupère le propriétaire et le groupe d'un fichier et remplace l'espace par deux points (root:root)
 getFileOwner() {
   fileName=$1
-  ls -ld $fileName | awk '{print $3,$4}' | sed 's/\ /\:/'
+  ls -ld $fileName | awk '{print $3,$4}' | sed 's| |:|'
 }
 
 # Permet la synchronisation d'un fichier ou dossier de la source vers la destination en vérifiant les permissions des dossiers
 checkAndCopy() {
   source=$1
   destination=$2
+  # Si l'élément est un lien symbolique
+  if [[ -L $source ]]; then
+    # Copie le lien symbolique
+    cp -P $source $destination
+    log "Copie du lien symbolique $source --> $destination"
+
   # Si l'élément passé en argument est un fichier
-  if [[ -f $source ]]; then
+  elif [[ -f $source ]]; then
     # Copie du fichier avec l'argument -p afin de garder les attributs de ce fichier (permissions, propriétaire, groupe)
     cp -p $source $destination
     log "Copie du fichier $source --> $destination"
