@@ -67,7 +67,6 @@ getJournalFileName() {
 getJournalFileLineLocation() {
   fileName=$1
   cat $journalPath | awk '{print $7}' | grep -Fnx "$fileName" | cut -d : -f 1
-  ## TODO : Ajout de "| tail -n 1" à la fin des commandes ???? 
 }
 
 # Récupère uniquement les permissions, le propriétaire, le groupe, la taille et date de dernière modification du fichier passé en argument dans le fichier de journalisation 
@@ -80,7 +79,7 @@ getJournalFileMetadatas() {
 # Récupère les permissions, le propriétaire et le groupe d'un dossier
 getFolderMetadatas() {
   folderName=$1
-  ls -ld $folderName | awk '{print ($1,$3,$4)}'
+  ls -ld --time-style='+%Y-%m-%d-%H-%M-%S' $folderName | awk '{print $1,$3,$4,$5,$6}'
 }
 
 # Avec l'aide de https://bit.ly/3dqAJcN
@@ -131,8 +130,6 @@ checkAndCopy() {
 
     # Vérifie si les permissions de la source sont les mêmes que celles de la destination en comparant leurs permissions octales
     if [[ $(getFilePermissions $source) != $(getFilePermissions $destination) ]]; then
-      # TODO : trop bizzare ca 
-      # chmod $(getFilePermissions $source) $destination 2> /dev/null ||
 
       # Si non, essaie de donner les permissions de la source à la destination grâce aux permissions en octal
       if [[ $(chmod $(getFilePermissions $source) $destination) ]]; then

@@ -113,6 +113,10 @@ sync() {
 
           # Si l'élément de la boucle est un dossier, et que les métadonnées du dossier sont différent de ceux enregistrée dans la journalisation 
           elif [[ -d $elementA/$file && $journalMetadas != $(getFolderMetadatas $elementA/$file) && $journalMetadas != $(getFolderMetadatas $elementB/$file) ]]; then
+            echo $journalMetadas
+            echo $(getFolderMetadatas $elementA/$file)
+            echo $(getFolderMetadatas $elementB/$file)
+            echo "======"
             # Alors il y a un conflit entre deux dossiers
             while [[ $REPLY != 1 || $REPLY != 2 ]] ; do
               warn "Conflit sur le dossier $file !"
