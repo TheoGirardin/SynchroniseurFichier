@@ -60,7 +60,7 @@ cp main.sh functions.sh case7/
 # Copie de la version modifié (A) vers l'original (B)
 mkdir -p case8/syncA case8/syncB
 echo "Version originale" > case8/syncB/file.txt
-sleep 0.8
+sleep 1.2
 echo "Version modifiée" > case8/syncA/file.txt
 touch case8/journal.txt
 listFolderExplicit case8/syncB > case8/journal.txt
@@ -70,99 +70,109 @@ cp main.sh functions.sh case8/
 # Copie de la version modifié (B) vers l'original (A)
 mkdir -p case9/syncA case9/syncB
 echo "Version originale" > case9/syncA/file.txt
-sleep 0.8
+sleep 1.2
 echo "Version modifiée" > case9/syncB/file.txt
 touch case9/journal.txt
 listFolderExplicit case9/syncA > case9/journal.txt
 cp main.sh functions.sh case9/
 
 # Cas 10: syncA avec un répertoire, syncB vide, avec fichier de journalisation
-# Copie du fichier de manière uniquement mais de manière récursive
+# Copie d'un dossier uniquement mais de manière récursive
 mkdir -p case10/syncA/directory case10/syncB
 touch case10/journal.txt
 cp main.sh functions.sh case10/
 
 # Cas 11: syncA vide, syncB avec un répertoire, avec fichier de journalisation
-# Copie du fichier de manière récursive
+# Copie d'un dossier de manière récursive avec toto.txt
 mkdir -p case11/syncA case11/syncB/directory
 touch case11/syncB/directory/toto.txt
 touch case11/journal.txt
 cp main.sh functions.sh case11/
 
 # Cas 12: syncA avec un fichier, syncB avec un répertoire portant le même nom
+# Conflit avec demande utilisateur, permettant d'ignorer ou de faire le changement soit même 
 mkdir -p case12/syncA case12/syncB/same_name
+sleep 1.2
 touch case12/syncA/same_name
 listFolderExplicit case12/syncA > case12/journal.txt
 cp main.sh functions.sh case12/
 
 # Cas 13: syncA avec un répertoire, syncB avec un fichier portant le même nom
+# Conflit avec demande utilisateur, permettant d'ignorer ou de faire le changement soit même 
 mkdir -p case13/syncA/same_name case13/syncB
+sleep 1.2
 touch case13/syncB/same_name
 listFolderExplicit case13/syncA > case13/journal.txt
 cp main.sh functions.sh case13/
 
-# Cas 14: syncA avec le fichier cible du lien, syncB avec un lien symbolique
+# Cas 14: syncA avec un fichier ayant des permissions différentes, syncB avec le fichier original
+# Si le contenu a été modifié, malgré les permissions, le contenu modifié sera changé
 mkdir -p case14/syncA case14/syncB
-touch case14/syncA/target_file.txt
-ln -s ../syncA/target_file.txt case14/syncA/symlink
+echo "Contenu modifié" > case14/syncA/file.txt
+echo "Contenu original" > case14/syncB/file.txt
+chmod 644 case14/syncA/file.txt
+chmod 755 case14/syncB/file.txt
 listFolderExplicit case14/syncB > case14/journal.txt
 cp main.sh functions.sh case14/
 
-# Cas 15: syncA avec un fichier ayant des permissions/modifications différentes, syncB avec le fichier original
+# Cas 15: syncA avec le fichier original, syncB avec un fichier ayant des permissions différentes
+# Si le contenu a été modifié, malgré les permissions, le contenu modifié sera changé
 mkdir -p case15/syncA case15/syncB
-echo "Contenu modifié" > case15/syncA/file.txt
-echo "Contenu original" > case15/syncB/file.txt
+echo "Contenu original" > case15/syncA/file.txt
+echo "Contenu modifié" > case15/syncB/file.txt
 chmod 644 case15/syncA/file.txt
 chmod 755 case15/syncB/file.txt
+listFolderExplicit case15/syncA > case15/journal.txt
 cp main.sh functions.sh case15/
 
-# Cas 16: syncA avec le fichier original, syncB avec un fichier ayant des permissions/modifications différentes
+# Cas 16: syncA et syncB avec des contenus et permissions différentes que celles dans le journal
+# Un conflit existe sur les permissions donc une proposition sera donné à l'utilisateur
 mkdir -p case16/syncA case16/syncB
-echo "Contenu original" > case16/syncA/file.txt
-echo "Contenu modifié" > case16/syncB/file.txt
+echo "Contenu" > case16/syncA/file.txt
+echo "Contenu" > case16/syncB/file.txt
 chmod 644 case16/syncA/file.txt
 chmod 755 case16/syncB/file.txt
+touch case16/journal.txt
+echo "-rw-r-xrw- 1 root root 17 2024-01-07-23-50-43 file.txt" > case16/journal.txt
 cp main.sh functions.sh case16/
 
-# Cas 17: syncA avec plusieurs fichiers et répertoires modifiés, syncB avec les versions originales, avec fichier de journalisation
-mkdir -p case17/syncA/dir case17/syncB/dir
-echo "Version modifiée" > case17/syncA/file1.txt
-echo "Version modifiée" > case17/syncA/dir/file2.txt
-echo "Version originale" > case17/syncB/file1.txt
-echo "Version originale" > case17/syncB/dir/file2.txt
+#----
+
+# Cas 17: syncA et syncB avec des contenus et permissions différentes que celles dans le journal
+# Un conflit existe sur les données donc une proposition sera donné à l'utilisateur
+mkdir -p case17/syncA case17/syncB
+echo "Contenu" > case17/syncA/file.txt
+echo "Contenu Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum." > case17/syncB/file.txt
 touch case17/journal.txt
+echo "-rw-r--r-- 1 root root 45 Jan  8 09:45 file.txt" > case17/journal.txt
 cp main.sh functions.sh case17/
 
-# Cas 18: syncA avec les versions originales, syncB avec plusieurs fichiers et répertoires modifiés, avec fichier de journalisation
+# Cas 18: syncA avec plusieurs fichiers et répertoires modifiés, syncB avec les versions originales, avec fichier de journalisation
+# Conflit sur le fichier dir ?????
 mkdir -p case18/syncA/dir case18/syncB/dir
-echo "Version originale" > case18/syncA/file1.txt
-echo "Version originale" > case18/syncA/dir/file2.txt
-echo "Version modifiée" > case18/syncB/file1.txt
-echo "Version modifiée" > case18/syncB/dir/file2.txt
+echo "Version originale" > case18/syncB/file1.txt
+echo "Version originale" > case18/syncB/dir/file2.txt
+sleep 1.2
+echo "Version modifiée" > case18/syncA/file1.txt
+echo "Version modifiée" > case18/syncA/dir/file2.txt
 touch case18/journal.txt
+listFolderExplicit case18/syncB > case18/journal.txt
 cp main.sh functions.sh case18/
 
-# Cas 19: syncA avec un fichier supprimé présent dans le fichier de journalisation, syncB avec le fichier existant
+# Cas 19: syncA avec un fichier existant, syncB avec un fichier supprimé présent dans le fichier de journalisation
 mkdir -p case19/syncA case19/syncB
-touch case19/syncB/file.txt
+touch case19/syncA/file.txt
 touch case19/journal.txt
 echo "file.txt" >> case19/journal.txt
 cp main.sh functions.sh case19/
 
-# Cas 20: syncA avec un fichier existant, syncB avec un fichier supprimé présent dans le fichier de journalisation
+# Cas 20: Exécution du script avec des permissions utilisateur non-root lorsque des modifications de propriétaire sont nécessaires
 mkdir -p case20/syncA case20/syncB
-touch case20/syncA/file.txt
-touch case20/journal.txt
-echo "file.txt" >> case20/journal.txt
-cp main.sh functions.sh case20/
 
-# Cas 21: Exécution du script avec des permissions utilisateur non-root lorsque des modifications de propriétaire sont nécessaires
-mkdir -p case22/syncA case22/syncB
-
-touch case22/syncA/fileA.txt
-touch case22/syncB/fileB.txt
+touch case20/syncA/fileA.txt
+touch case20/syncB/fileB.txt
 sudo useradd user1 2> /dev/null
 sudo useradd user2 2> /dev/null
-sudo chown user1 case22/syncA/fileA.txt 
-sudo chown user2 case22/syncB/fileB.txt 
-cp main.sh functions.sh case22/
+sudo chown user1 case20/syncA/fileA.txt 
+sudo chown user2 case20/syncB/fileB.txt 
+cp main.sh functions.sh case20/
