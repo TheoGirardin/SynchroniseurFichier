@@ -136,8 +136,6 @@ touch case16/journal.txt
 echo "-rw-r-xrw- 1 root root 17 2024-01-07-23-50-43 file.txt" > case16/journal.txt
 cp main.sh functions.sh case16/
 
-#----
-
 # Cas 17: syncA et syncB avec des contenus et permissions différentes que celles dans le journal
 # Un conflit existe sur les données donc une proposition sera donné à l'utilisateur
 mkdir -p case17/syncA case17/syncB
@@ -148,31 +146,28 @@ echo "-rw-r--r-- 1 root root 45 Jan  8 09:45 file.txt" > case17/journal.txt
 cp main.sh functions.sh case17/
 
 # Cas 18: syncA avec plusieurs fichiers et répertoires modifiés, syncB avec les versions originales, avec fichier de journalisation
-# Conflit sur le fichier dir ?????
+# Conflit de droits sur les dossiers, et copie de manière "récursive"
 mkdir -p case18/syncA/dir case18/syncB/dir
-echo "Version originale" > case18/syncB/file1.txt
 echo "Version originale" > case18/syncB/dir/file2.txt
 sleep 1.2
-echo "Version modifiée" > case18/syncA/file1.txt
 echo "Version modifiée" > case18/syncA/dir/file2.txt
+chmod 644 case18/syncA/dir
+chmod 755 case18/syncB/dir
 touch case18/journal.txt
 listFolderExplicit case18/syncB > case18/journal.txt
+sed -i '/ dir$/s/^drwxr-xr-x/dr-xrw---x/' case18/journal.txt
 cp main.sh functions.sh case18/
 
-# Cas 19: syncA avec un fichier existant, syncB avec un fichier supprimé présent dans le fichier de journalisation
+# Cas 19: Exécution du script avec des permissions utilisateur non-root lorsque des modifications de propriétaire sont nécessaires
+# 
 mkdir -p case19/syncA case19/syncB
 touch case19/syncA/file.txt
+touch case19/syncB/file.txt
+listFolderExplicit case19/syncA > case19/journal.txt
+sudo chown user1 case19/syncA/file.txt 
+sudo chown user2 case19/syncB/file.txt 
 touch case19/journal.txt
-echo "file.txt" >> case19/journal.txt
 cp main.sh functions.sh case19/
 
-# Cas 20: Exécution du script avec des permissions utilisateur non-root lorsque des modifications de propriétaire sont nécessaires
-mkdir -p case20/syncA case20/syncB
-
-touch case20/syncA/fileA.txt
-touch case20/syncB/fileB.txt
 sudo useradd user1 2> /dev/null
 sudo useradd user2 2> /dev/null
-sudo chown user1 case20/syncA/fileA.txt 
-sudo chown user2 case20/syncB/fileB.txt 
-cp main.sh functions.sh case20/

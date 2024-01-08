@@ -130,6 +130,8 @@ checkAndCopy() {
 
     # Vérifie si les permissions de la source sont les mêmes que celles de la destination en comparant leurs permissions octales
     if [[ $(getFilePermissions $source) != $(getFilePermissions $destination) ]]; then
+      # Essaie de modifier les droits
+      chmod $(getFilePermissions $source) $destination 2> /dev/null ||
 
       # Si non, essaie de donner les permissions de la source à la destination grâce aux permissions en octal
       if [[ $(chmod $(getFilePermissions $source) $destination) ]]; then
