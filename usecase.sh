@@ -136,13 +136,17 @@ touch case16/journal.txt
 echo "-rw-r-xrw- 1 root root 17 2024-01-07-23-50-43 file.txt" > case16/journal.txt
 cp main.sh functions.sh case16/
 
-# Cas 17: syncA et syncB avec des contenus et permissions différentes que celles dans le journal
+# Cas 17: syncA et syncB avec des contenus et permissions différentes que celles dans le journal -> A revoir
 # Un conflit existe sur les données donc une proposition sera donné à l'utilisateur
 mkdir -p case17/syncA case17/syncB
+touch case17/syncA/file.txt
+listFolderExplicit case17/syncA > case17/journal.txt
 echo "Contenu" > case17/syncA/file.txt
-echo "Contenu Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum." > case17/syncB/file.txt
+echo "Contenu Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua." >> case17/syncB/file.txt
+echo "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat." >> case17/syncB/file.txt
+echo "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur." >> case17/syncB/file.txt
+echo "Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum." >> case17/syncB/file.txt
 touch case17/journal.txt
-echo "-rw-r--r-- 1 root root 45 Jan  8 09:45 file.txt" > case17/journal.txt
 cp main.sh functions.sh case17/
 
 # Cas 18: syncA avec plusieurs fichiers et répertoires modifiés, syncB avec les versions originales, avec fichier de journalisation
@@ -159,10 +163,12 @@ sed -i '/ dir$/s/^drwxr-xr-x/dr-xrw---x/' case18/journal.txt
 cp main.sh functions.sh case18/
 
 # Cas 19: Exécution du script avec des permissions utilisateur non-root lorsque des modifications de propriétaire sont nécessaires
-# 
+# Conflit :  Présentation des données et métadonnée de chacun pour faire un choix
 mkdir -p case19/syncA case19/syncB
 touch case19/syncA/file.txt
 touch case19/syncB/file.txt
+echo "Test de contenu" > case19/syncA/file.txt
+echo "Contenu de test" > case19/syncB/file.txt
 listFolderExplicit case19/syncA > case19/journal.txt
 sudo chown user1 case19/syncA/file.txt 
 sudo chown user2 case19/syncB/file.txt 
