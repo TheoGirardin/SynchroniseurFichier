@@ -37,7 +37,6 @@ cp main.sh functions.sh case4/
 mkdir -p case5/syncA case5/syncB
 touch case5/syncA/file.txt
 touch case5/journal.txt
-listFolderExplicit case5/syncB > case5/journal.txt
 cp main.sh functions.sh case5/
 
 # Cas 6: syncA vide, syncB avec un fichier, avec fichier de journalisation rempli
@@ -108,8 +107,9 @@ cp main.sh functions.sh case13/
 # Cas 14: syncA avec un fichier ayant des permissions différentes, syncB avec le fichier original
 # Si le contenu a été modifié, malgré les permissions, le contenu modifié sera changé
 mkdir -p case14/syncA case14/syncB
-echo "Contenu modifié" > case14/syncA/file.txt
 echo "Contenu original" > case14/syncB/file.txt
+sleep 1.2
+echo "Contenu modifié" > case14/syncA/file.txt
 chmod 644 case14/syncA/file.txt
 chmod 755 case14/syncB/file.txt
 listFolderExplicit case14/syncB > case14/journal.txt
@@ -119,6 +119,7 @@ cp main.sh functions.sh case14/
 # Si le contenu a été modifié, malgré les permissions, le contenu modifié sera changé
 mkdir -p case15/syncA case15/syncB
 echo "Contenu original" > case15/syncA/file.txt
+sleep 1.2
 echo "Contenu modifié" > case15/syncB/file.txt
 chmod 644 case15/syncA/file.txt
 chmod 755 case15/syncB/file.txt
